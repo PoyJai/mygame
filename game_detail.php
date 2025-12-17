@@ -131,7 +131,7 @@ if (strpos($game_genre, 'Strategy') !== false) $genre_class = 'bg-amber-600/20 t
         <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-primary">
                 <a href="index.php">
-                AESTHETIC<span class="text-secondary">.GAMES</span>
+                Stun<span class="text-secondary">Shop</span>
                 </a>
             </div>
             <div class="hidden md:flex space-x-8 text-lg font-medium items-center">

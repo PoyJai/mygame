@@ -111,7 +111,7 @@ $conn->close();
         <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-primary">
                 <a href="index.php">
-                AESTHETIC<span class="text-secondary">.GAMES</span>
+                Stun<span class="text-secondary">Shop</span>
                 </a>
             </div>
             
@@ -167,7 +167,7 @@ $conn->close();
 
     <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <h1 class="text-4xl md:text-6xl font-extrabold text-center mb-6 text-white">
-            ยินดีต้อนรับสู่ <span class="text-primary">AESTHETIC<span class="text-secondary">.GAMES</span></span>
+            ยินดีต้อนรับสู่ <span class="text-primary">Stun<span class="text-secondary">Shop</span></span>
         </h1>
         <p class="text-center text-gray-400 max-w-3xl mx-auto mb-16 text-lg">
             ค้นพบโลกแห่งเกมที่ผสมผสานความสวยงามของภาพและการเล่นที่น่าดึงดูดใจ

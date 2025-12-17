@@ -75,7 +75,7 @@ if (isset($conn)) $conn->close();
     <header class="bg-background/90 shadow-lg border-b border-gray-700">
         <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <a href="index.php" class="text-2xl font-bold text-primary">
-                AESTHETIC<span class="text-secondary">.GAMES</span>
+                Stun<span class="text-secondary">Shop</span>
             </a>
             <span class="text-xl text-white font-semibold hidden md:block">ขั้นตอนที่ 2: ชำระเงิน</span>
             

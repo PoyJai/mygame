@@ -168,13 +168,12 @@ if (isset($conn) && is_object($conn)) {
     <header class="sticky top-0 z-50 bg-dark-bg/90 backdrop-blur-sm shadow-lg" data-theme-bg="header">
         <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-primary">
-                AESTHETIC<span class="text-secondary">.GAMES</span>
+                Stun<span class="text-secondary">Shop</span>
             </div>
             
             <div class="hidden md:flex space-x-8 text-lg font-medium items-center">
                 <a href="index.php" class="hover:text-primary transition duration-150">หน้าแรก</a>
                 <a href="allgame.php" class="hover:text-primary transition duration-150">เกมทั้งหมด</a>
-                <a href="#" class="hover:text-primary transition duration-150">บทความ</a>
                 <a href="contact.php" class="text-primary font-bold transition duration-150">ติดต่อเรา</a> 
 
                 <button id="theme-switch-btn" class="relative text-gray-300 hover:text-secondary p-2 transition duration-150" title="สลับธีม (Dark/Light)">
@@ -211,7 +210,6 @@ if (isset($conn) && is_object($conn)) {
         <div id="mobile-menu" class="hidden md:hidden absolute w-full bg-dark-card/95 backdrop-blur-sm py-2 shadow-lg border-t border-gray-700" data-theme-bg="card">
             <a href="index.php" class="block px-4 py-2 text-sm text-white hover:bg-gray-600 transition duration-150">หน้าแรก</a>
             <a href="allgame.php" class="block px-4 py-2 text-sm text-white hover:bg-gray-600 transition duration-150">เกมทั้งหมด</a>
-            <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-gray-600 transition duration-150">บทความ</a>
             <a href="contact.php" class="block px-4 py-2 text-sm text-primary font-bold hover:bg-gray-600 transition duration-150">ติดต่อเรา</a>
             <div id="auth-mobile-status" class="px-4 py-2 border-t border-gray-700 mt-2 pt-2">
                 <?php if ($is_logged_in): ?>
@@ -232,7 +230,7 @@ if (isset($conn) && is_object($conn)) {
         <div class="max-w-4xl mx-auto">
             <div class="text-center mb-12 relative">
                 <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg [text-shadow:0_0_8px_rgba(79,70,229,0.8)]">
-                    📞 ติดต่อ <span class="text-primary">AESTHETIC<span class="text-secondary">.GAMES</span></span>
+                    📞 ติดต่อ <span class="text-primary">Stun<span class="text-secondary">Shop</span></span>
                 </h1>
                 <p class="text-center text-gray-200 md:text-xl mb-12">
                     มีคำถาม ข้อเสนอแนะ หรือต้องการความช่วยเหลือ? ทีมงานของเราพร้อมให้บริการ
@@ -248,7 +246,7 @@ if (isset($conn) && is_object($conn)) {
                         <svg class="w-8 h-8 text-secondary flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                         <div>
                             <p class="font-bold text-white text-xl">อีเมล (ตลอด 24 ชม.)</p>
-                            <a href="mailto:support@aesthetic.games" class="text-primary hover:underline transition">support@aesthetic.games</a>
+                            <a href="mailto:support@aesthetic.games" class="text-primary hover:underline transition">StunShop@gmail.com</a>
                         </div>
                     </div>
                     
@@ -256,7 +254,7 @@ if (isset($conn) && is_object($conn)) {
                         <svg class="w-8 h-8 text-secondary flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                         <div>
                             <p class="font-bold text-white text-xl">โทรศัพท์ (จ.-ศ. 9:00 - 17:00 น.)</p>
-                            <a href="tel:+66123456789" class="text-gray-400 hover:text-white transition">(+66) 123-456-789</a>
+                            <a href="tel:+66123456789" class="text-gray-400 hover:text-white transition">(+66) 098-345-6921</a>
                         </div>
                     </div>
                     
@@ -264,7 +262,7 @@ if (isset($conn) && is_object($conn)) {
                         <svg class="w-8 h-8 text-secondary flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         <div>
                             <p class="font-bold text-white text-xl">ที่อยู่บริษัท</p>
-                            <p class="text-gray-400">อาคาร AESTHETIC, 99/9 ถนนเกมเมอร์, กรุงเทพฯ 10330</p>
+                            <p class="text-gray-400">อาคาร StunShop, 99/9 ถนนเกมเมอร์, กรุงเทพฯ 10330</p>
                         </div>
                     </div>
 
