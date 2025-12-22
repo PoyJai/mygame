@@ -90,6 +90,12 @@ include('server.php');
                 สร้างบัญชีใหม่
             </a>
         </div>
+        <div class="mt-6 text-center text-sm">
+            <p class="text-indigo-200"></p>
+            <a href="forgot_password.php" class="text-indigo-300 hover:text-indigo-100 font-semibold">
+                ลืมรหัสผ่าน
+            </a>
+        </div>
 
     </form>
 

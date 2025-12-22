@@ -369,7 +369,6 @@ if (isset($conn)) $conn->close();
         };
 
         // 3. ฟังก์ชันเพิ่มสินค้าลงตะกร้า (Local Storage)
-        const handleAddToCart = (e) => {
             e.preventDefault();
             e.stopPropagation(); // สำคัญมาก เพื่อไม่ให้คลิกปุ่มแล้ววิ่งไปหน้า game_detail
             
@@ -388,19 +387,6 @@ if (isset($conn)) $conn->close();
 
             const exists = cart.some(item => item.id === gameId);
 
-            if (!exists) {
-                cart.push(newItem);
-                saveCartToStorage(cart);
-                renderCart(cart); 
-                
-                alert(`"${gameTitle}" ถูกเพิ่มลงในตะกร้าแล้ว!`);
-                // ไม่ต้องเปิด Modal ที่หน้านี้ก็ได้
-                // if(cartModal) cartModal.classList.remove('hidden'); 
-            } else {
-                alert(`"${gameTitle}" มีอยู่ในตะกร้าแล้ว!`);
-                // if(cartModal) cartModal.classList.remove('hidden');
-            }
-        };
 
         // 4. จัดการการลบสินค้า (Local Storage)
         const handleRemove = (e) => {
