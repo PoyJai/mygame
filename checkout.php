@@ -1,195 +1,170 @@
 <?php
-// ต้องเรียกใช้ session_start() ก่อนการส่งออกใด ๆ
 session_start();
-
-// !!! เพิ่มการเชื่อมต่อฐานข้อมูล !!!
-// ในหน้า checkout จริง อาจจำเป็นต้องใช้ฐานข้อมูลเพื่อดึงข้อมูลลูกค้า หรือบันทึกออร์เดอร์
 require_once 'db_config.php'; 
 
-// 1. ตรวจสอบการออกจากระบบ (Logout Logic)
+// 1. Logout Logic
 if (isset($_GET['logout'])) {
     session_destroy(); 
     header('location: login.php'); 
     exit;
 }
 
-// 2. ตรวจสอบสถานะการเข้าสู่ระบบ
+// 2. Auth Check
 $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $current_username = $is_logged_in ? htmlspecialchars($_SESSION["username"]) : "Guest"; 
-
-// !!! ปิดการเชื่อมต่อฐานข้อมูลเมื่อเสร็จสิ้นการใช้งาน PHP ด้านบน !!!
-if (isset($conn)) $conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ดำเนินการชำระเงิน</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ชำระเงิน | YoToy ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'primary': '#4F46E5', 
-                        'secondary': '#F97316', 
-                        'background': '#1F2937', 
-                        'card': '#374151', 
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'Tahoma', 'sans-serif'],
-                    },
+                        'toy-pink': '#FFB4B4',
+                        'toy-blue': '#B4E4FF',
+                        'toy-yellow': '#FDF7C3',
+                        'toy-green': '#BFF6C3',
+                    }
                 }
             }
         }
     </script>
     <style>
-        body {
-            background-color: #1F2937;
-            color: #F3F4F6;
+        body { 
+            font-family: 'Mitr', sans-serif; 
+            background-color: #FFFDF9; 
+            background-image: radial-gradient(#FFB4B4 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            -webkit-tap-highlight-color: transparent;
         }
-        input[type="text"], input[type="email"], textarea, select {
-            background-color: #1F2937;
-            border: 1px solid #4B5563; /* Gray-600 */
-            color: #F3F4F6;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        .toy-card {
+            background: white;
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            border-radius: 1.5rem;
         }
-        input[type="text"]:focus, input[type="email"]:focus, textarea:focus, select:focus {
-            border-color: #4F46E5; /* Primary */
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
-            outline: none;
+        @media (min-width: 768px) {
+            .toy-card { box-shadow: 8px 8px 0px #000; }
         }
-        /* Custom scrollbar for checkout list */
-        .checkout-list::-webkit-scrollbar {
-            width: 8px;
+        .input-toy {
+            border: 3px solid #000;
+            border-radius: 1rem;
+            font-size: 16px; /* ป้องกัน iOS Auto-zoom */
         }
-        .checkout-list::-webkit-scrollbar-thumb {
-            background-color: #4B5563;
-            border-radius: 10px;
+        .btn-toy {
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
         }
+        .btn-toy:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="pb-10 md:pb-20">
 
-    <header class="bg-background/90 shadow-lg border-b border-gray-700">
-        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="index.php" class="text-2xl font-bold text-primary">
-                Stun<span class="text-secondary">Shop</span>
+    <header class="bg-white/80 backdrop-blur-md border-b-4 border-black mb-6 md:mb-10 sticky top-0 z-50">
+        <nav class="container mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+            <a href="index.php" class="text-2xl md:text-3xl font-black italic">
+                <span class="text-toy-pink">Yo</span><span class="text-toy-blue">Toy</span>
             </a>
-            <span class="text-xl text-white font-semibold hidden md:block">ขั้นตอนที่ 2: ชำระเงิน</span>
-            
-            <a href="allgame.php" class="text-sm text-gray-400 hover:text-white transition duration-150">
-                &larr; กลับไปเลือกเกม
-            </a>
+            <div class="flex items-center gap-2 md:gap-4">
+                <span class="text-[10px] md:text-sm font-bold bg-toy-yellow px-2 md:px-3 py-1 border-2 border-black rounded-full truncate max-w-[100px] md:max-w-none">
+                    👤 <?= $current_username ?>
+                </span>
+                <a href="allgame.php" class="font-bold text-gray-500 hover:text-black transition text-[10px] md:text-sm underline md:no-underline">← กลับ</a>
+            </div>
         </nav>
     </header>
 
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <h1 class="text-4xl font-extrabold text-white mb-10 text-center">ดำเนินการชำระเงิน</h1>
-
-        <div class="lg:grid lg:grid-cols-3 lg:gap-10">
+    <main class="container mx-auto px-4 md:px-6 max-w-6xl">
+        <div class="flex flex-col lg:flex-row gap-6 md:gap-10">
             
-            <div class="lg:col-span-2 space-y-8">
-                
-                <div class="bg-card p-6 rounded-xl shadow-2xl border border-gray-700">
-                    <h2 class="text-2xl font-bold text-primary mb-5">1. ข้อมูลติดต่อและที่อยู่</h2>
-                    <form id="checkout-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-300 mb-1">ชื่อ-นามสกุล</label>
-                                <input type="text" id="name" name="name" required class="w-full px-4 py-2 rounded-lg" placeholder="ปิยวัฒน์ ใจดี">
+            <div class="flex-1 order-2 lg:order-1 space-y-6 md:space-y-8">
+                <div class="toy-card p-5 md:p-8">
+                    <h2 class="text-xl md:text-2xl font-black text-black mb-6 md:mb-8 flex items-center uppercase italic">
+                        <span class="bg-toy-blue w-8 h-8 md:w-10 md:h-10 border-2 border-black rounded-full inline-flex items-center justify-center mr-3 shadow-[2px_2px_0px_#000] non-italic text-sm md:text-base">1</span>
+                        Shipping
+                    </h2>
+                    <form id="checkout-form" class="space-y-4 md:space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div class="space-y-1 md:space-y-2">
+                                <label class="text-sm font-bold ml-1 text-gray-700">ชื่อ-นามสกุล</label>
+                                <input type="text" name="name" placeholder="John Doe" required class="input-toy w-full px-4 py-3 md:py-4">
                             </div>
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">อีเมล</label>
-                                <input type="email" id="email" name="email" required class="w-full px-4 py-2 rounded-lg" placeholder="you@example.com">
+                            <div class="space-y-1 md:space-y-2">
+                                <label class="text-sm font-bold ml-1 text-gray-700">อีเมล</label>
+                                <input type="email" name="email" placeholder="hello@example.com" required class="input-toy w-full px-4 py-3 md:py-4">
                             </div>
                         </div>
-                        
-                        <div class="mt-4">
-                            <label for="address" class="block text-sm font-medium text-gray-300 mb-1">ที่อยู่จัดส่ง</label>
-                            <textarea id="address" name="address" rows="3" required class="w-full px-4 py-2 rounded-lg" placeholder="บ้านเลขที่, ถนน, แขวง/ตำบล"></textarea>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <div>
-                                <label for="province" class="block text-sm font-medium text-gray-300 mb-1">จังหวัด</label>
-                                <input type="text" id="province" name="province" required class="w-full px-4 py-2 rounded-lg" placeholder="กรุงเทพมหานคร">
-                            </div>
-                            <div>
-                                <label for="zipcode" class="block text-sm font-medium text-gray-300 mb-1">รหัสไปรษณีย์</label>
-                                <input type="text" id="zipcode" name="zipcode" required class="w-full px-4 py-2 rounded-lg" pattern="[0-9]{5}" placeholder="10000">
-                            </div>
-                            <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">เบอร์โทรศัพท์</label>
-                                <input type="text" id="phone" name="phone" required class="w-full px-4 py-2 rounded-lg" pattern="[0-9]{10}" placeholder="08XXXXXXXX">
-                            </div>
+                        <div class="space-y-1 md:space-y-2">
+                            <label class="text-sm font-bold ml-1 text-gray-700">เบอร์โทร</label>
+                            <input type="tel" name="phone" placeholder="08X-XXXXXXX" required class="input-toy w-full md:w-1/2 px-4 py-3 md:py-4">
                         </div>
                     </form>
                 </div>
 
-                <div class="bg-card p-6 rounded-xl shadow-2xl border border-gray-700">
-                    <h2 class="text-2xl font-bold text-primary mb-5">2. วิธีการชำระเงิน</h2>
-                    <div class="space-y-3">
-                        <div class="flex items-start bg-gray-700 p-3 rounded-lg border border-gray-600 cursor-pointer hover:border-primary transition duration-150">
-                            <input type="radio" id="payment-bank" name="payment-method" value="bank_transfer" required class="mt-1 h-5 w-5 text-primary focus:ring-primary" checked>
-                            <label for="payment-bank" class="ml-3 block text-white font-medium">โอนเงินผ่านธนาคาร</label>
-                        </div>
-                        <div class="flex items-start bg-gray-700 p-3 rounded-lg border border-gray-600 cursor-pointer hover:border-primary transition duration-150">
-                            <input type="radio" id="payment-credit" name="payment-method" value="credit_card" required class="mt-1 h-5 w-5 text-primary focus:ring-primary">
-                            <label for="payment-credit" class="ml-3 block text-white font-medium">บัตรเครดิต/เดบิต (จำลอง)</label>
-                        </div>
-                        <div class="flex items-start bg-gray-700 p-3 rounded-lg border border-gray-600 cursor-pointer hover:border-primary transition duration-150">
-                            <input type="radio" id="payment-promptpay" name="payment-method" value="promptpay" required class="mt-1 h-5 w-5 text-primary focus:ring-primary">
-                            <label for="payment-promptpay" class="ml-3 block text-white font-medium">พร้อมเพย์</label>
-                        </div>
+                <div class="toy-card p-5 md:p-8">
+                    <h2 class="text-xl md:text-2xl font-black text-black mb-6 md:mb-8 flex items-center uppercase italic">
+                        <span class="bg-toy-yellow w-8 h-8 md:w-10 md:h-10 border-2 border-black rounded-full inline-flex items-center justify-center mr-3 shadow-[2px_2px_0px_#000] non-italic text-black text-sm md:text-base">2</span>
+                        Payment
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        <label class="relative flex items-center p-4 md:p-5 border-4 border-black rounded-2xl cursor-pointer bg-white shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all">
+                            <input type="radio" name="payment-method" value="promptpay" class="w-5 h-5 accent-black" checked>
+                            <span class="ml-4 font-black text-base md:text-lg">PROMPTPAY 📱</span>
+                        </label>
+                        <label class="relative flex items-center p-4 md:p-5 border-4 border-gray-300 rounded-2xl bg-gray-50 opacity-50">
+                            <input type="radio" name="payment-method" value="wallet" class="w-5 h-5" disabled>
+                            <span class="ml-4 font-black text-base md:text-lg text-gray-400">WALLET (Soon)</span>
+                        </label>
                     </div>
                 </div>
-
             </div>
-            
-            <div class="lg:col-span-1 mt-10 lg:mt-0">
-                <div class="bg-card p-6 rounded-xl shadow-2xl border border-secondary/50 sticky top-20">
-                    <h2 class="text-2xl font-bold text-secondary mb-5 border-b border-gray-700 pb-3">สรุปคำสั่งซื้อ</h2>
+
+            <div class="lg:w-96 order-1 lg:order-2">
+                <div class="toy-card p-5 md:p-8 sticky top-24 md:top-28 bg-white">
+                    <h2 class="text-lg md:text-xl font-black mb-4 md:mb-6 border-b-4 border-black pb-3 md:pb-4 text-center uppercase italic">Your Order</h2>
                     
-                    <div id="checkout-items-list" class="checkout-list max-h-72 overflow-y-auto space-y-4 pr-2">
-                        <p class="text-center text-gray-500 py-10">กำลังโหลดรายการสินค้า...</p>
+                    <div id="checkout-items-list" class="space-y-3 mb-6 max-h-48 md:max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                        </div>
+
+                    <div id="empty-cart-message" class="hidden text-center py-6">
+                        <p class="font-bold text-gray-400">ตะกร้าว่างเปล่า 🧐</p>
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-gray-700 space-y-3">
-                        <div class="flex justify-between text-gray-300">
-                            <span>ราคารวมสินค้า:</span>
+                    <div class="space-y-3 pt-4 border-t-4 border-black font-bold">
+                        <div class="flex justify-between text-gray-500 text-sm md:text-base">
+                            <span>ราคารวม:</span>
                             <span id="subtotal-amount">฿0.00</span>
                         </div>
-                        <div class="flex justify-between text-gray-300">
+                        <div class="flex justify-between text-green-600 text-sm md:text-base">
                             <span>ค่าจัดส่ง:</span>
-                            <span id="shipping-fee" class="text-green-400">ฟรี</span>
+                            <span>FREE</span>
                         </div>
-                        
-                        <div class="flex justify-between items-center text-2xl font-bold pt-3 border-t border-gray-600">
-                            <span class="text-white">ยอดชำระสุทธิ:</span>
-                            <span id="grand-total-amount" class="text-secondary">฿0.00</span>
+                        <div class="flex justify-between text-2xl md:text-3xl font-black text-black pt-2 border-t-2 border-dashed border-gray-200">
+                            <span id="grand-total-amount">฿0.00</span>
                         </div>
                     </div>
-                    
-                    <button id="place-order-btn" type="submit" form="checkout-form" class="w-full mt-6 px-4 py-3 bg-secondary rounded-lg text-white font-bold text-lg hover:bg-orange-700 transition duration-300 disabled:opacity-50" disabled>
-                        ยืนยันและชำระเงิน
+
+                    <button id="place-order-btn" type="submit" form="checkout-form" class="btn-toy w-full mt-6 md:mt-10 py-4 md:py-5 bg-toy-green text-black font-black text-xl md:text-2xl rounded-2xl uppercase italic disabled:opacity-50">
+                        Confirm ✨
                     </button>
-                    <p id="empty-cart-message" class="text-red-400 text-sm mt-3 text-center hidden">กรุณาเพิ่มสินค้าลงในตะกร้าก่อนดำเนินการต่อ</p>
                 </div>
             </div>
-
         </div>
     </main>
-    
-    <footer class="bg-card border-t border-gray-700 mt-12">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-400">
-            <p>&copy; 2025 โลกแห่งเกมอันงดงาม | Checkout</p>
-        </div>
-    </footer>
-    
+
     <script>
-        // **************** Cart UI & Logic Variables (ใช้ Local Storage) ****************
         const cartItemsList = document.getElementById('checkout-items-list');
         const subtotalAmount = document.getElementById('subtotal-amount');
         const grandTotalAmount = document.getElementById('grand-total-amount');
@@ -197,89 +172,81 @@ if (isset($conn)) $conn->close();
         const checkoutForm = document.getElementById('checkout-form');
         const emptyCartMessage = document.getElementById('empty-cart-message');
 
-        // 1. ดึงข้อมูลตะกร้าจาก Local Storage
-        const getCartFromStorage = () => {
-            const cartString = localStorage.getItem('game_cart');
-            return cartString ? JSON.parse(cartString) : [];
-        };
+        const getCartFromStorage = () => JSON.parse(localStorage.getItem('game_cart') || '[]');
 
-        // 2. ฟังก์ชัน Render รายการสินค้าและคำนวณยอดรวม
         const renderCartAndCalculate = () => {
             const cart = getCartFromStorage();
-            let subTotal = 0;
-            const shippingFee = 0; // สมมติว่าจัดส่งฟรี
+            let total = 0;
             cartItemsList.innerHTML = '';
             
             if (cart.length === 0) {
-                cartItemsList.innerHTML = '<p class="text-center text-gray-500 py-10">ตะกร้าว่างเปล่า</p>';
-                placeOrderBtn.disabled = true;
                 emptyCartMessage.classList.remove('hidden');
-            } else {
-                emptyCartMessage.classList.add('hidden');
-                placeOrderBtn.disabled = false;
-                
-                cart.forEach(item => {
-                    const price = item.price ? parseFloat(item.price) : 0.00; 
-                    subTotal += price;
-                    
-                    const itemHtml = `
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-300 truncate pr-2">${item.title}</span>
-                            <span class="text-white font-medium">฿${price.toFixed(2)}</span>
-                        </div>
-                    `;
-                    cartItemsList.innerHTML += itemHtml;
-                });
-            }
-            
-            const grandTotal = subTotal + shippingFee;
-            
-            subtotalAmount.textContent = `฿${subTotal.toFixed(2)}`;
-            grandTotalAmount.textContent = `฿${grandTotal.toFixed(2)}`;
-        };
-        
-        // 3. จัดการการส่งคำสั่งซื้อ (จำลอง)
-        const handlePlaceOrder = (e) => {
-            e.preventDefault();
-            
-            if (getCartFromStorage().length === 0) {
-                alert("ตะกร้าสินค้าว่างเปล่า กรุณาเพิ่มสินค้าก่อน");
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.classList.add('grayscale');
                 return;
             }
+
+            emptyCartMessage.classList.add('hidden');
+            placeOrderBtn.disabled = false;
             
-            // 1. รวบรวมข้อมูล
-            const formData = new FormData(checkoutForm);
-            const orderData = {};
-            formData.forEach((value, key) => (orderData[key] = value));
-            
-            const cartItems = getCartFromStorage();
-            
-            // 2. แสดงผลสรุป (แทนการส่งไป Server จริง)
-            console.log("Order Data:", orderData);
-            console.log("Cart Items:", cartItems);
-            
-            const total = parseFloat(grandTotalAmount.textContent.replace('฿', ''));
-            
-            alert(`
-                ✅ การสั่งซื้อสำเร็จ (จำลอง)!
-                ยอดชำระ: ฿${total.toFixed(2)}
-                วิธีการชำระ: ${orderData['payment-method']}
-                ที่อยู่: ${orderData.address}, ${orderData.province} ${orderData.zipcode}
+            cart.forEach(item => {
+                const price = parseFloat(item.price || 0);
+                total += price;
                 
-                *** หากมีการเชื่อมต่อฐานข้อมูลจริง โค้ดส่วนนี้จะทำการส่งข้อมูลไปยัง Server เพื่อบันทึกออร์เดอร์ ***
-            `);
+                cartItemsList.innerHTML += `
+                    <div class="flex justify-between items-start gap-4 p-3 border-2 border-black rounded-xl bg-gray-50">
+                        <span class="font-bold text-[12px] md:text-sm leading-tight text-black line-clamp-2">${item.title}</span>
+                        <span class="font-black text-toy-pink whitespace-nowrap text-sm">฿${price.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+
+            subtotalAmount.textContent = `฿${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            grandTotalAmount.textContent = `฿${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        };
+        
+        const handlePlaceOrder = async (e) => {
+            e.preventDefault();
+            const cart = getCartFromStorage();
             
-            // 3. ล้างตะกร้าสินค้าใน Local Storage และ Redirect กลับหน้าหลัก
-            localStorage.removeItem('game_cart');
-            window.location.href = 'index.php'; 
+            if (cart.length === 0) { alert("ตะกร้าว่างเปล่า!"); return; }
+
+            const formData = new FormData(checkoutForm);
+            const orderData = {
+                ...Object.fromEntries(formData.entries()),
+                cart: cart,
+                total: parseFloat(grandTotalAmount.textContent.replace('฿', '').replace(/,/g, ''))
+            };
+
+            try {
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.textContent = "Processing... ⏳";
+
+                const response = await fetch('process_checkout.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.removeItem('game_cart');
+                    window.location.href = `payment.php?order_id=${result.order_id}&total=${orderData.total}`;
+                } else {
+                    alert("❌ " + result.message);
+                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.textContent = "Confirm Order ✨";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                placeOrderBtn.disabled = false;
+            }
         };
 
-        // **************** Event Listeners และ Initialization ****************
         document.addEventListener('DOMContentLoaded', () => {
-            // โหลดรายการสินค้าในตะกร้าเมื่อโหลดหน้าเสร็จ
             renderCartAndCalculate(); 
-            
-            // แนบ Event Listener ให้ปุ่มยืนยันการสั่งซื้อ
             checkoutForm.addEventListener('submit', handlePlaceOrder);
         });
     </script>

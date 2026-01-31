@@ -1,47 +1,23 @@
 <?php
-// ต้องเรียกใช้ session_start() ก่อนการส่งออกใด ๆ
 session_start();
-
-// !!! เพิ่มการเชื่อมต่อฐานข้อมูล !!!
 require_once 'db_config.php'; 
 
-// 1. ตรวจสอบการออกจากระบบ (Logout Logic) - คัดลอกมาจาก allgame.php
+// ตรวจสอบ Login (ถ้าไม่ได้ล็อกอินจะเด้งไปหน้า login)
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header('location: login.php');
+    exit;
+}
+
 if (isset($_GET['logout'])) {
-    session_destroy(); // ทำลาย Session ทั้งหมด
-    // ใช้ header เพื่อนำไปยังหน้าเข้าสู่ระบบ และให้แน่ใจว่ามันถูก Redirect ทันที
+    session_destroy();
     header('location: login.php'); 
     exit;
 }
 
-// 2. ตรวจสอบสถานะการเข้าสู่ระบบ (Authentication Check)
-// Note: หน้า index.php ปกติจะไม่บังคับ login ดังนั้นจะเช็คแค่สถานะและตั้งตัวแปร
 $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $current_username = $is_logged_in ? htmlspecialchars($_SESSION["username"]) : "Guest"; 
 
-// --- *** LOGIC สำหรับ Pagination และ Database (คงไว้เพื่อจำลองโครงสร้างเดิม) *** ---
-
-// 1. กำหนดค่า Pagination
-$games_per_page = 16; // 16 เกมต่อหน้า ตามที่กำหนด
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($current_page < 1) $current_page = 1;
-
-// 2. นับจำนวนเกมทั้งหมดในตาราง 'games' 
-$total_games_query = $conn->query("SELECT COUNT(*) AS total FROM games");
-$total_games = 0;
-if ($total_games_query) {
-    $total_games = $total_games_query->fetch_assoc()['total'];
-}
-
-// 3. คำนวณจำนวนหน้ารวมทั้งหมด (ถ้ามี)
-$calculated_total_pages = ceil($total_games / $games_per_page);
-$total_pages = min(5, $calculated_total_pages); 
-
-// 4. คำนวณ OFFSET (จุดเริ่มต้นในการดึงข้อมูล)
-$offset = ($current_page - 1) * $games_per_page;
-
-// 5. ดึงข้อมูลเกมสำหรับหน้าปัจจุบัน (ตัวอย่าง)
-// ดึง 4 เกมแรกเพื่อใช้แสดงในส่วน "เกมเด่น"
-$sql = "SELECT id, title, description, genre, image_url FROM games LIMIT 4 OFFSET 0";
+$sql = "SELECT id, title, genre, image_url, price FROM games LIMIT 4";
 $result = $conn->query($sql);
 $games = [];
 if ($result && $result->num_rows > 0) {
@@ -49,331 +25,262 @@ if ($result && $result->num_rows > 0) {
         $games[] = $row;
     }
 }
-
-// !!! ปิดการเชื่อมต่อฐานข้อมูลเมื่อเสร็จสิ้นการใช้งาน PHP ด้านบน !!!
 $conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โลกแห่งเกมอันงดงาม</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StunShop - Gaming World! 🎮✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'primary': '#4F46E5', // Indigo-600
-                        'secondary': '#F97316', // Orange-600
-                        'background': '#1F2937', // Gray-800
-                        'card': '#374151', // Gray-700
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'Tahoma', 'sans-serif'],
+                        'pop-yellow': '#FFEF00', 'pop-blue': '#00C2FF',
+                        'pop-pink': '#FF48B0', 'pop-green': '#2DFF81', 'pop-orange': '#FF7A00',
                     },
                 }
             }
         }
     </script>
     <style>
-        /* ตั้งค่าพื้นหลังและสีข้อความพื้นฐาน */
         body {
-            background-color: #1F2937;
-            color: #F3F4F6;
-            background-image: url('https://m.media-amazon.com/images/S/pv-target-images/6fb04fc002b005a28a0d2b2bc1a1e9ca06c9dd05a7e5d006033776c05a44d706.jpg');
-            background-size: cover;
-            background-position: center;
+            font-family: 'Kanit', sans-serif;
+            background-color: #f0f0f0;
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        /* สำหรับปุ่มที่มีสไตล์โดดเด่น */
-        .btn-primary {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+        /* Neubrutalism Effects */
+        .pop-card {
+            background: white;
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.5), 0 4px 6px -4px rgba(79, 70, 229, 0.5);
+        @media (min-width: 768px) {
+            .pop-card:hover { transform: scale(1.03) rotate(1deg); box-shadow: 12px 12px 0px #FF48B0; }
         }
-        /* สไตล์สำหรับการ์ดเกม */
-        .game-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+        .pop-btn {
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
         }
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
-        }
+        .pop-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #000; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .float-anim { animation: float 4s ease-in-out infinite; }
+        
+        /* Mobile Menu Overlay */
+        #mobile-menu { transition: transform 0.3s ease-in-out; }
+        .menu-open { transform: translateX(0) !important; }
     </style>
 </head>
-<body>
+<body class="text-black">
 
-    <header class="sticky top-0 z-50 bg-background/90 backdrop-blur-sm shadow-lg">
-        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-primary">
-                <a href="index.php">
-                Stun<span class="text-secondary">Shop</span>
-                </a>
-            </div>
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b-4 border-black">
+        <nav class="container mx-auto px-4 py-3 md:px-6 md:py-4 flex justify-between items-center">
+            <a href="index.php" class="text-2xl md:text-4xl font-black tracking-tighter flex items-center group">
+                <span class="bg-pop-yellow border-2 border-black px-2 py-0.5 italic shadow-[3px_3px_0px_#000]">STUN</span>
+                <span class="ml-1 uppercase">Shop</span>
+            </a>
             
-            <div class="hidden md:flex space-x-8 text-lg font-medium items-center">
-                <a href="index.php" class="hover:text-primary transition duration-150">หน้าแรก</a>
-                <a href="allgame.php" class="hover:text-primary transition duration-150">เกมทั้งหมด</a>
-                <a href="contact.php" class="hover:text-primary transition duration-150">ติดต่อ</a>
-        
-                <button id="open-cart-btn" class="relative text-gray-300 hover:text-secondary p-2 transition duration-150">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <div class="hidden md:flex space-x-6 items-center font-bold">
+                <a href="index.php" class="hover:text-pop-pink transition">หน้าแรก</a>
+                <a href="allgame.php" class="hover:text-pop-blue transition">คลังเกม</a>
+                <a href="contact.php" class="hover:text-pop-green transition">ติดต่อเรา</a>
+                
+                <button id="open-cart-btn" class="pop-btn bg-pop-green p-2 rounded-full relative group">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span class="cart-count-badge absolute -top-2 -right-2 bg-pop-pink text-white text-xs px-2 py-0.5 border-2 border-black rounded-full">0</span>
                 </button>
-        
-                <div id="auth-status-container">
-                    <?php if ($is_logged_in): ?>
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm font-medium text-white/80 hidden lg:block">สวัสดี, <?= $current_username ?></span>
-                            <a href="index.php?logout=1" class="px-4 py-2 bg-gray-600 rounded-full text-white font-semibold hover:bg-gray-700 transition duration-300">
-                                ออกจากระบบ
-                            </a>
-                        </div>
-                    <?php else: ?>
-                        <button id="auth-button-desktop" class="px-4 py-2 bg-secondary rounded-full text-white font-semibold hover:bg-orange-700 transition duration-300" onclick="window.location.href='login.php'">
-                            เข้าสู่ระบบ / สมัคร
-                        </button>
-                    <?php endif; ?>
+
+                <div class="flex items-center space-x-2 bg-white border-2 border-black px-3 py-1 shadow-[3px_3px_0px_#000]">
+                    <span class="text-xs font-black text-pop-pink"><?= $current_username ?></span>
+                    <a href="index.php?logout=1" class="text-[10px] text-red-500 underline font-black">EXIT</a>
                 </div>
             </div>
-            
-            <button id="menu-button" class="md:hidden focus:outline-none p-2 rounded-lg hover:bg-card">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-            </button>
-            
-            <div id="mobile-menu" class="hidden md:hidden bg-card/95 py-2">
-                <a href="index.php" class="block px-4 py-2 text-sm text-primary font-bold hover:bg-gray-600 transition duration-150">หน้าแรก</a>
-                <a href="allgame.php" class="block px-4 py-2 text-sm hover:bg-gray-600 transition duration-150">เกมทั้งหมด</a>
-                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-600 transition duration-150">บทความ</a>
-                <div id="auth-mobile-status" class="px-4 py-2">
-                    <?php if ($is_logged_in): ?>
-                        <div class="text-sm font-medium text-white/80 mb-2 text-center">สวัสดี, <?= $current_username ?></div>
-                        <a href="index.php?logout=1" class="w-full block text-center px-4 py-2 bg-gray-600 rounded-full text-white font-semibold hover:bg-gray-700 transition duration-300">
-                            ออกจากระบบ
-                        </a>
-                    <?php else: ?>
-                        <button id="auth-button-mobile" class="w-full px-4 py-2 bg-secondary rounded-full text-white font-semibold hover:bg-orange-700 transition duration-300" onclick="window.location.href='login.php'">
-                            เข้าสู่ระบบ / สมัคร
-                        </button>
-                    <?php endif; ?>
-                </div>
+
+            <div class="flex md:hidden items-center space-x-3">
+                <button id="open-cart-btn-mob" class="pop-btn bg-pop-green p-2 rounded-lg relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span class="cart-count-badge absolute -top-2 -right-2 bg-pop-pink text-white text-[10px] px-1.5 py-0.5 border-2 border-black rounded-full">0</span>
+                </button>
+                <button id="menu-toggle" class="p-2 border-2 border-black bg-pop-yellow shadow-[3px_3px_0px_#000]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <h1 class="text-4xl md:text-6xl font-extrabold text-center mb-6 text-white">
-            ยินดีต้อนรับสู่ <span class="text-primary">Stun<span class="text-secondary">Shop</span></span>
-        </h1>
-        <p class="text-center text-gray-400 max-w-3xl mx-auto mb-16 text-lg">
-            ค้นพบโลกแห่งเกมที่ผสมผสานความสวยงามของภาพและการเล่นที่น่าดึงดูดใจ
-        </p>
+    <div id="mobile-menu" class="fixed inset-0 z-[60] bg-pop-blue transform translate-x-full md:hidden flex flex-col items-center justify-center space-y-8 text-2xl font-black italic border-l-8 border-black">
+        <button id="menu-close" class="absolute top-6 right-6 text-white bg-black p-2 rounded-full">X</button>
+        <a href="index.php" class="hover:bg-white px-4 py-2 border-4 border-transparent hover:border-black transition">หน้าแรก</a>
+        <a href="allgame.php" class="hover:bg-white px-4 py-2 border-4 border-transparent hover:border-black transition">คลังเกม</a>
+        <a href="contact.php" class="hover:bg-white px-4 py-2 border-4 border-transparent hover:border-black transition">ติดต่อเรา</a>
+        <a href="index.php?logout=1" class="text-red-600 bg-white border-4 border-black px-6 py-2">LOGOUT EXIT</a>
+    </div>
 
-        <h2 class="text-3xl font-bold text-white mb-8 border-b border-gray-700 pb-2">🎮 เกมเด่น</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        
-        <?php if (!empty($games)): ?>
-            <?php foreach ($games as $game): // แสดงแค่ 4 เกมแรกเป็นตัวอย่าง ?>
-                <?php 
-                    $game_id = htmlspecialchars($game['id']); 
-                    $game_title = htmlspecialchars($game['title']);
-                    $game_genre = htmlspecialchars($game['genre']);
-                    $game_image = empty($game['image_url']) ? 'https://placehold.co/400x250/374151/ffffff?text=No+Image' : htmlspecialchars($game['image_url']);
-                    
-                    $genre_class = 'bg-primary/20 text-primary'; 
-                    if (strpos($game_genre, 'Survival') !== false) $genre_class = 'bg-secondary/20 text-secondary';
-                    if (strpos($game_genre, 'Adventure') !== false) $genre_class = 'bg-green-500/20 text-green-500';
-                    if (strpos($game_genre, 'Racing') !== false) $genre_class = 'bg-yellow-500/20 text-yellow-500';
-                ?>
-                
-                <a href="game_detail.php?id=<?= $game_id ?>" class="game-card bg-card rounded-xl overflow-hidden shadow-2xl block">
-                    <img src="<?= $game_image ?>" alt="<?= $game_title ?>" class="w-full h-48 object-cover">
-                    <div class="p-5">
-                        <h3 class="text-xl font-bold text-white mb-2"><?= $game_title ?></h3>
-                        <span class="inline-block <?= $genre_class ?> text-xs font-semibold px-3 py-1 rounded-full">
-                            <?= $game_genre ?>
-                        </span>
-                    </div>
-                </a>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p class="text-gray-500 col-span-4 text-center">ไม่มีเกมที่พร้อมใช้งานในขณะนี้</p>
-        <?php endif; ?>
-        
+    <main class="container mx-auto px-4 md:px-6 py-8 md:py-12">
+        <div class="bg-pop-orange border-4 border-black p-6 md:p-12 mb-10 md:mb-20 relative overflow-hidden shadow-[8px_8px_0px_#000] md:shadow-[15px_15px_0px_#000]" data-aos="zoom-in">
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between text-center md:text-left">
+                <div>
+                    <h1 class="text-4xl md:text-8xl font-black text-white uppercase mb-4 [text-shadow:3px_3px_0px_#000] md:[text-shadow:6px_6px_0px_#000] leading-tight">
+                        Happy <br>Gaming!
+                    </h1>
+                    <p class="text-sm md:text-2xl font-bold text-black bg-white inline-block px-4 py-1 border-2 border-black rotate-2">
+                        แหล่งรวมเกมที่สดใสที่สุด 🌈
+                    </p>
+                </div>
+
+                <div class="mt-8 md:mt-0 relative float-anim hidden sm:block">
+                    <svg width="120" height="120" viewBox="0 0 200 200" class="md:w-48 md:h-48 drop-shadow-[6px_6px_0px_#000]">
+                        <circle cx="100" cy="100" r="80" fill="#FFEF00" stroke="black" stroke-width="6"/>
+                        <g class="animate-bounce" style="animation-duration: 2s;">
+                            <circle cx="70" cy="80" r="12" fill="black"/><circle cx="130" cy="80" r="12" fill="black"/>
+                        </g>
+                        <path d="M60 120 Q100 170 140 120" stroke="black" stroke-width="8" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
         </div>
-        
-        <div class="text-center mt-12">
-            <a href="allgame.php" class="inline-block px-8 py-3 bg-secondary rounded-full text-white font-bold hover:bg-orange-700 transition duration-300 btn-primary">
-                สำรวจเกมทั้งหมด »
-            </a>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12" data-aos="fade-right">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div class="bg-pop-blue p-2 border-2 border-black mr-4 rotate-12">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="2"><path d="M21 7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7z"/><path d="M6 12h4m-2-2v4m7-2h.01M17 10h.01"/></svg>
+                </div>
+                <h2 class="text-xl md:text-4xl font-black uppercase italic bg-pop-pink text-white px-3 md:px-4 border-2 border-black shadow-[4px_4px_0px_#000]">เกมยอดนิยม</h2>
+            </div>
+            <a href="allgame.php" class="text-sm font-bold underline decoration-2 md:decoration-4 decoration-pop-blue hover:text-pop-blue transition">ดูทั้งหมด</a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 relative z-10">
+            <?php if (!empty($games)): ?>
+                <?php foreach ($games as $game): 
+                    $img = !empty($game['image_url']) ? $game['image_url'] : 'https://placehold.co/400x300/white/black?text=GAME+PIC';
+                ?>
+                <div class="pop-card group" data-aos="fade-up">
+                    <div class="border-b-4 border-black overflow-hidden bg-gray-200 aspect-video md:h-48 relative">
+                        <img src="<?= $img ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="<?= $game['title'] ?>">
+                        <div class="absolute top-2 right-2 bg-pop-green border-2 border-black px-2 py-1 text-[8px] md:text-[10px] font-black rotate-12">HOT!</div>
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[8px] md:text-[10px] font-black uppercase bg-pop-yellow px-2 border border-black inline-block mb-1 italic">
+                            <?= htmlspecialchars($game['genre']) ?>
+                        </span>
+                        <h3 class="text-lg md:text-xl font-black mb-3 line-clamp-1 uppercase group-hover:text-pop-blue"><?= htmlspecialchars($game['title']) ?></h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl md:text-2xl font-black tracking-tighter">฿<?= number_format($game['price'], 0) ?></span>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="col-span-full text-center py-20 bg-white border-4 border-dashed border-black">
+                    <p class="text-xl font-bold italic animate-pulse">กำลังเตรียมความสนุก... 🎮</p>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
-    
-    <footer class="bg-card border-t border-gray-700 mt-12">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-400">
-            <div class="flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-8 mb-4">
-                <a href="#" class="hover:text-primary transition duration-150">นโยบายความเป็นส่วนตัว</a>
-                <a href="#" class="hover:text-primary transition duration-150">ข้อกำหนดการใช้งาน</a>
-            </div>
-            <p>&copy; 2025 โลกแห่งเกมอันงดงาม (AESTHETIC.GAMES) | สงวนลิขสิทธิ์</p>
-        </div>
-    </footer>
 
-    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[110] hidden flex items-center justify-center p-4">
-        <div class="bg-card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl relative border border-secondary/50">
-            <button id="close-cart-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition duration-150">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <h2 class="text-3xl font-bold text-secondary mb-6 text-center">🛒 รายการสั่งซื้อ (Cart)</h2>
-            
-            <div id="cart-items-list" class="space-y-4 min-h-[100px]">
-                <p class="text-center text-gray-500 py-10">ตะกร้าว่างเปล่า</p>
-            </div>
-
-            <div id="cart-summary" class="mt-8 pt-4 border-t border-gray-700">
-                <div class="flex justify-between items-center text-xl font-bold mb-4">
-                    <span class="text-white">ราคารวม:</span>
-                    <span id="cart-total-amount" class="text-secondary">฿0.00</span>
+    <div id="cart-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white border-4 border-black shadow-[8px_8px_0px_#000] w-full max-w-md p-6 md:p-8 relative">
+            <button id="close-cart-modal-btn" class="absolute -top-4 -right-4 bg-pop-pink border-4 border-black text-white px-3 py-1 font-black shadow-[3px_3px_0px_#000]">X</button>
+            <h2 class="text-2xl font-black mb-6 border-b-4 border-black inline-block uppercase italic bg-pop-yellow px-2">ตะกร้าของคุณ 🛒</h2>
+            <div id="cart-items-list" class="space-y-4 mb-6 max-h-[50vh] overflow-y-auto pr-2"></div>
+            <div class="border-t-4 border-black pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-black italic uppercase">ยอดรวม:</span>
+                    <span id="cart-total-amount" class="text-3xl font-black text-pop-pink">฿0.00</span>
                 </div>
-                <button id="checkout-btn" class="w-full px-4 py-3 bg-primary rounded-lg text-white font-bold hover:bg-indigo-700 transition duration-300 disabled:opacity-50" disabled>
-                    ดำเนินการชำระเงิน 
-                </button>
+                <button id="checkout-btn" class="pop-btn w-full py-3 bg-pop-green font-black text-xl uppercase italic">BUY NOW! 🚀</button>
             </div>
         </div>
     </div>
+
+    <footer class="mt-10 py-10 text-center border-t-4 border-black bg-white">
+        <p class="font-black text-sm md:text-lg">STUNSHOP.TOY &copy; 2026</p>
+        <p class="font-black text-sm md:text-lg">เว็บนี้สร้างไว้สำหรับส่งงานเท่านั้น<br>วิทยาลัยอาชีวศึกษาวิทยาลัยนครสวรรค์ &copy;</p>
+    </footer>
+    
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-    // **************** Cart UI & Logic Variables (ใช้ Local Storage) ****************
-    const cartModal = document.getElementById('cart-modal');
-    const openCartBtn = document.getElementById('open-cart-btn');
-    const closeCartModalBtn = document.getElementById('close-cart-modal-btn');
-    const cartItemsList = document.getElementById('cart-items-list');
-    const cartTotalAmount = document.getElementById('cart-total-amount');
-    const checkoutBtn = document.getElementById('checkout-btn');
+        AOS.init({ duration: 800, once: true });
 
-    // 1. ดึง/อัปเดตสถานะตะกร้าจาก Local Storage
-    const getCartFromStorage = () => {
-        const cartString = localStorage.getItem('game_cart');
-        return cartString ? JSON.parse(cartString) : [];
-    };
-
-    const saveCartToStorage = (cart) => {
-        localStorage.setItem('game_cart', JSON.stringify(cart));
-    };
-
-    // 2. ฟังก์ชัน Render Cart
-    const renderCart = (cart) => {
-        let total = 0;
-        cartItemsList.innerHTML = '';
-
-        if (cart.length === 0) {
-            cartItemsList.innerHTML = '<p class="text-center text-gray-500 py-10">ตะกร้าว่างเปล่า</p>';
-            checkoutBtn.disabled = true;
-        } else {
-            checkoutBtn.disabled = false;
-            cart.forEach(item => {
-                // ใช้ price จาก Local Storage
-                const price = item.price ? parseFloat(item.price) : 0.00; 
-                total += price;
-                
-                const itemHtml = `
-                    <div class="flex justify-between items-center bg-gray-700 p-3 rounded-lg border border-gray-600">
-                        <span class="text-white font-medium">${item.title}</span>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-secondary font-bold">฿${price.toFixed(2)}</span>
-                            <button data-id="${item.id}" class="remove-from-cart-btn text-red-400 hover:text-red-500 transition duration-150" title="ลบออกจากตะกร้า">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                cartItemsList.innerHTML += itemHtml;
-            });
-        }
-        
-        // อัปเดตจำนวนสินค้าบนไอคอน
-        cartItemCount.textContent = cart.length > 99 ? '99+' : cart.length.toString(); 
-        cartTotalAmount.textContent = `฿${total.toFixed(2)}`;
-        attachRemoveListeners(); 
-    };
-
-    // 3. จัดการการลบสินค้า (Local Storage)
-    const handleRemove = (e) => {
-        e.preventDefault();
-        const removeBtn = e.currentTarget;
-        // ต้องเปลี่ยนเป็น gameId เพื่อลบออกจาก cart
-        const gameId = removeBtn.dataset.id; 
-        
-        if (confirm('คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?')) {
-            let cart = getCartFromStorage();
-            cart = cart.filter(item => item.id !== gameId); // กรองเฉพาะรายการที่ไม่ต้องการลบ
-            saveCartToStorage(cart);
-            renderCart(cart); 
-        }
-    };
-
-    // 4. แนบ Event Listener ให้ปุ่มลบ
-    const attachRemoveListeners = () => {
-        document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
-            button.removeEventListener('click', handleRemove); 
-            button.addEventListener('click', handleRemove);
-        });
-    };
-        
-    // **************** Event Listeners และ Initialization ****************
-    document.addEventListener('DOMContentLoaded', () => {
-
-        const menuButton = document.getElementById('menu-button');
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('menu-toggle');
         const mobileMenu = document.getElementById('mobile-menu');
+        const menuClose = document.getElementById('menu-close');
 
-        menuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-        
-        // Event: เปิด Modal ตะกร้า
-        if (openCartBtn) {
-            openCartBtn.addEventListener('click', () => {
-                // ใช้ Local Storage ดึงข้อมูล
-                renderCart(getCartFromStorage()); 
-                if(cartModal) cartModal.classList.remove('hidden');
-            });
-        }
-        
-        // Event: ปิด Modal ตะกร้า
-        if (closeCartModalBtn) {
-            closeCartModalBtn.addEventListener('click', () => {
-                if(cartModal) cartModal.classList.add('hidden');
-            });
-        }
-        
-        // Event: ปิด Modal ตะกร้า เมื่อคลิกนอกกรอบ
-        if (cartModal) {
-            cartModal.addEventListener('click', (e) => {
-                if (e.target === cartModal) {
-                    cartModal.classList.add('hidden');
-                }
-            });
-        }
+        menuToggle.onclick = () => mobileMenu.classList.add('menu-open');
+        menuClose.onclick = () => mobileMenu.classList.remove('menu-open');
 
-        // Event สำหรับปุ่ม Checkout
-            if (checkoutBtn) {
-                checkoutBtn.addEventListener('click', () => {
-                    const cart = getCartFromStorage(); // ตรวจสอบตะกร้าอีกครั้งก่อนไป
-                    if (cart.length > 0) {
-                        window.location.href = 'checkout.php'; // <--- เปลี่ยนให้ Redirect ไปหน้า checkout
-                    } else {
-                        alert('ตะกร้าสินค้าว่างเปล่า ไม่สามารถดำเนินการชำระเงินได้!');
-                    }
+        // Cart Logic
+        const cartModal = document.getElementById('cart-modal');
+        const cartItemsList = document.getElementById('cart-items-list');
+        const cartTotalAmount = document.getElementById('cart-total-amount');
+        const checkoutBtn = document.getElementById('checkout-btn');
+
+        const getCart = () => JSON.parse(localStorage.getItem('game_cart') || '[]');
+        const saveCart = (cart) => localStorage.setItem('game_cart', JSON.stringify(cart));
+
+        window.addToCart = (game) => {
+            const cart = getCart();
+            cart.push(game);
+            saveCart(cart);
+            renderCart();
+        };
+
+        window.removeItem = (index) => {
+            const cart = getCart();
+            cart.splice(index, 1);
+            saveCart(cart);
+            renderCart();
+        };
+
+        const renderCart = () => {
+            const cart = getCart();
+            let total = 0;
+            cartItemsList.innerHTML = '';
+            document.querySelectorAll('.cart-count-badge').forEach(b => b.textContent = cart.length);
+
+            if (cart.length === 0) {
+                cartItemsList.innerHTML = '<div class="text-center py-6 italic opacity-50">ว่างเปล่า...</div>';
+                checkoutBtn.disabled = true;
+                checkoutBtn.style.opacity = '0.5';
+            } else {
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '1';
+                cart.forEach((item, index) => {
+                    const price = parseFloat(item.price || 0);
+                    total += price;
+                    cartItemsList.innerHTML += `
+                        <div class="flex justify-between items-center p-2 border-2 border-black bg-gray-50">
+                            <div><div class="font-black text-xs uppercase">${item.title}</div><div class="text-pop-pink font-bold text-sm">฿${price.toLocaleString()}</div></div>
+                            <button onclick="removeItem(${index})" class="bg-red-500 text-white border-2 border-black p-1">X</button>
+                        </div>`;
                 });
             }
+            cartTotalAmount.textContent = `฿${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        };
 
-        // *** สำคัญ: เรียกใช้ฟังก์ชันนี้เมื่อโหลดหน้าเสร็จเพื่อแสดงจำนวนสินค้าตั้งแต่แรก ***
-        // ใช้ Local Storage ดึงข้อมูล
-        renderCart(getCartFromStorage()); 
-    });
-    
-</script>
-    </body>
+        // UI Events
+        document.getElementById('open-cart-btn').onclick = () => { renderCart(); cartModal.classList.remove('hidden'); };
+        document.getElementById('open-cart-btn-mob').onclick = () => { renderCart(); cartModal.classList.remove('hidden'); };
+        document.getElementById('close-cart-modal-btn').onclick = () => cartModal.classList.add('hidden');
+        checkoutBtn.onclick = () => { window.location.href = 'checkout.php'; };
+
+        renderCart();
+    </script>
+</body>
 </html>
