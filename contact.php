@@ -97,7 +97,6 @@ if (isset($_SESSION['flash_message'])) {
         @keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-15px) rotate(2deg); } }
         .float-anim { animation: float 4s ease-in-out infinite; }
         
-        /* สไตล์พิเศษสำหรับปุ่มตอนเลื่อนเมาส์ */
         .btn-toy:hover span { display: inline-block; animation: wave 0.5s infinite; }
         @keyframes wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(20deg); } }
     </style>
@@ -185,23 +184,28 @@ if (isset($_SESSION['flash_message'])) {
             <h3 class="text-4xl font-black mb-16 italic" data-aos="zoom-in">Our <span class="text-toy-purple [text-shadow:2px_2px_0px_#000]">Creative</span> Team</h3>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-8">
                 <?php
+                // --- แก้ไขชื่อและรูปภาพที่นี่ ---
                 $creators = [
-                    ['seed' => 'Bear', 'name' => 'Name 1', 'color' => 'bg-toy-pink'],
-                    ['seed' => 'Cat', 'name' => 'Name 2', 'color' => 'bg-toy-blue'],
-                    ['seed' => 'Rabbit', 'name' => 'Name 3', 'color' => 'bg-toy-yellow'],
-                    ['seed' => 'Fox', 'name' => 'Name 4', 'color' => 'bg-toy-purple'],
-                    ['seed' => 'Koala', 'name' => 'Name 5', 'color' => 'bg-toy-green'],
+                    ['img' => 'https://scontent.fphs1-1.fna.fbcdn.net/v/t39.30808-6/486758610_2055818484929524_9079364524599314993_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=DG1aJYTJuxoQ7kNvwFwNphM&_nc_oc=Adk7LL-hDNYRnvck6MQG-Mq7FLTPeOS68VLG8NYD8bzCfYzBTrOt12Usgor-JmgLeT8&_nc_zt=23&_nc_ht=scontent.fphs1-1.fna&_nc_gid=sw09rxIxSUeziNtEcZvWqQ&oh=00_AfvTw0jeztidxFxQx0BJcJMOsdTgSyHM7AIbWI0C4auG4g&oe=6986BAFB',   'name' => 'ภาคภูมิ กิจขุนทด (ผู้จัดการDEV)', 'color' => 'bg-toy-pink'],
+                    ['img' => 'https://scontent.fphs1-1.fna.fbcdn.net/v/t39.30808-6/487325937_1673906957338402_2279914903245428897_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=V_04bDCp7i4Q7kNvwE6B2P-&_nc_oc=AdkPo0i7AG5RKJGRRlV4QQs8iuBFCoPOwM2hMC9nHNNC_52YwjGVbHLL8tv5bptZgqE&_nc_zt=23&_nc_ht=scontent.fphs1-1.fna&_nc_gid=R67O-5GvepkviuABhMP8Tw&oh=00_AfuBwXFcXU3-DLwYQq3czT79ZXbe89u_Iqgz0uOvbW40PA&oe=6986BF3C',    'name' => 'จตุพร ออนเอี่ยม(ผู้พัฒนา)', 'color' => 'bg-toy-blue'],
+                    ['img' => 'https://scontent.fphs1-1.fna.fbcdn.net/v/t39.30808-6/481712855_645277548452888_4955381743898349745_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=6aA2F-svq00Q7kNvwFS_j-d&_nc_oc=AdkdI1eK3pbZa4leqRhIoPiDjez5iyAui7cCmpGSFfo1czDpXZK8HaFGImzRp_Jljs0&_nc_zt=23&_nc_ht=scontent.fphs1-1.fna&_nc_gid=rTNdBmKq1XKYMSM_0nU_cw&oh=00_AfveHWWbfnHqtHJpqHsmKktBf-sndLMvHOwiNop6uwsWyg&oe=69869AC6', 'name' => 'ณัฐพร แพรบุญ(ผู้ออกแบบ)', 'color' => 'bg-toy-yellow'],
+                    ['img' => 'https://scontent.fphs1-1.fna.fbcdn.net/v/t39.30808-6/569872949_1337005828219240_9103151418027305796_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=833d8c&_nc_ohc=-tb5ZU7SGJoQ7kNvwGVNEcr&_nc_oc=AdkVqFgqhKgFL0Oo4VBwE1yGKdTWrRxtbXx4aURlvFmJBcUCGU-ZcBvVDR4XaysKiFA&_nc_zt=23&_nc_ht=scontent.fphs1-1.fna&_nc_gid=YeYK5PFCQ5gbLY7MPZzgSw&oh=00_AfuAAMl1LDSq5jF1ZnKEAxNyo23gGu9pc7d8ZoiN4cGD-A&oe=69869CC9',    'name' => 'ธีรภัทร์ ส่งแสง(HR)', 'color' => 'bg-toy-purple'],
+                    ['img' => 'https://scontent.fphs1-1.fna.fbcdn.net/v/t39.30808-6/574476465_122138447486929755_7935171239808604673_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=DJYiID6wOi8Q7kNvwH4WeHk&_nc_oc=AdkPR2r5tPrwApGeAJsoraJV5MTNCgZSpsPtZp4t8DVPRVj-fwm1R1JEOyL_yy-M5kI&_nc_zt=23&_nc_ht=scontent.fphs1-1.fna&_nc_gid=dz5s4YQWwpdotXTShDFolA&oh=00_AfuWPIlGVUlwMPU1PuL79mDWrG57cfrRf-zE97R8xdWrWQ&oe=6986B305',  'name' => 'ชลธี คงแสง(พนักงาน)', 'color' => 'bg-toy-green'],
                 ];
+                
                 $delay = 0;
                 foreach ($creators as $c): ?>
                     <div class="group" data-aos="fade-up" data-aos-delay="<?= $delay ?>">
                         <div class="relative mb-4 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-3">
                             <div class="absolute inset-0 <?= $c['color'] ?> border-4 border-black rounded-3xl translate-x-2 translate-y-2 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform"></div>
-                            <div class="relative bg-white border-4 border-black rounded-3xl overflow-hidden p-2">
-                                <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=<?= $c['seed'] ?>" class="w-full">
+                            
+                            <div class="relative bg-white border-4 border-black rounded-3xl overflow-hidden p-2 aspect-square flex items-center justify-center">
+                                <img src="<?= $c['img'] ?>" alt="<?= $c['name'] ?>" class="w-full h-full object-cover rounded-2xl">
                             </div>
                         </div>
-                        <div class="bg-black text-white px-4 py-1 rounded-full text-sm font-black transform transition-transform group-hover:scale-110"><?= $c['name'] ?></div>
+                        <div class="bg-black text-white px-4 py-1 rounded-full text-sm font-black transform transition-transform group-hover:scale-110">
+                            <?= $c['name'] ?>
+                        </div>
                     </div>
                 <?php $delay += 100; endforeach; ?>
             </div>
@@ -215,14 +219,8 @@ if (isset($_SESSION['flash_message'])) {
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        // ✅ เริ่มทำงาน AOS Animation
-        AOS.init({
-            duration: 800,
-            once: true,
-            offset: 100
-        });
+        AOS.init({ duration: 800, once: true, offset: 100 });
 
-        // ✅ JavaScript สำหรับซ่อน Alert อัตโนมัติ (คงเดิม)
         document.addEventListener('DOMContentLoaded', function() {
             const alert = document.getElementById('status-alert');
             if (alert) {
