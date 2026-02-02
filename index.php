@@ -2,7 +2,6 @@
 session_start();
 require_once 'db_config.php'; 
 
-// ตรวจสอบ Login (ถ้าไม่ได้ล็อกอินจะเด้งไปหน้า login)
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header('location: login.php');
     exit;
@@ -17,7 +16,8 @@ if (isset($_GET['logout'])) {
 $is_logged_in = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
 $current_username = $is_logged_in ? htmlspecialchars($_SESSION["username"]) : "Guest"; 
 
-$sql = "SELECT id, title, genre, image_url, price FROM games LIMIT 4";
+// ดึงข้อมูลเกมมาแสดงผลและใช้ทำ Slider
+$sql = "SELECT id, title, genre, image_url, price FROM games LIMIT 8";
 $result = $conn->query($sql);
 $games = [];
 if ($result && $result->num_rows > 0) {
@@ -26,6 +26,9 @@ if ($result && $result->num_rows > 0) {
     }
 }
 $conn->close();
+
+// เตรียม Array รูปภาพสำหรับ JavaScript Slider
+$game_images = array_column($games, 'image_url');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -50,39 +53,37 @@ $conn->close();
         }
     </script>
     <style>
-        body {
-            font-family: 'Kanit', sans-serif;
-            background-color: #f0f0f0;
-            background-image: radial-gradient(#ccc 1px, transparent 1px);
-            background-size: 20px 20px;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+        * {
+            border-radius: 0 !important;
         }
 
-        /* Neubrutalism Effects */
-        .pop-card {
-            background: white;
-            border: 3px solid #000;
-            box-shadow: 6px 6px 0px #000;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @media (min-width: 768px) {
-            .pop-card:hover { transform: scale(1.03) rotate(1deg); box-shadow: 12px 12px 0px #FF48B0; }
-        }
-
+        /* แก้ไขส่วน pop-btn เดิม (ถ้ามี rounded-full ให้เอาออก) */
         .pop-btn {
             border: 3px solid #000;
             box-shadow: 4px 4px 0px #000;
             transition: all 0.1s;
+            border-radius: 0; /* บังคับขอบเหลี่ยม */
         }
-        .pop-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #000; }
 
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        /* ส่วนของ Card */
+        .pop-card {
+            background: white;
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            border-radius: 0; /* บังคับขอบเหลี่ยม */
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @media (min-width: 768px) { .pop-card:hover { transform: scale(1.03) rotate(1deg); box-shadow: 12px 12px 0px #FF48B0; } }
+        .pop-btn { border: 3px solid #000; box-shadow: 4px 4px 0px #000; transition: all 0.1s; }
+        .pop-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #000; }
         .float-anim { animation: float 4s ease-in-out infinite; }
-        
-        /* Mobile Menu Overlay */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         #mobile-menu { transition: transform 0.3s ease-in-out; }
         .menu-open { transform: translateX(0) !important; }
+        
+        /* สไตล์เพิ่มเติมสำหรับ Slider */
+        .slider-container { position: relative; overflow: hidden; border: 4px solid #000; box-shadow: 10px 10px 0px #000; }
+        #game-slider img { transition: opacity 0.8s ease-in-out; }
     </style>
 </head>
 <body class="text-black">
@@ -93,23 +94,19 @@ $conn->close();
                 <span class="bg-pop-yellow border-2 border-black px-2 py-0.5 italic shadow-[3px_3px_0px_#000]">STUN</span>
                 <span class="ml-1 uppercase">Shop</span>
             </a>
-            
             <div class="hidden md:flex space-x-6 items-center font-bold">
                 <a href="index.php" class="hover:text-pop-pink transition">หน้าแรก</a>
                 <a href="allgame.php" class="hover:text-pop-blue transition">คลังเกม</a>
                 <a href="contact.php" class="hover:text-pop-green transition">ติดต่อเรา</a>
-                
                 <button id="open-cart-btn" class="pop-btn bg-pop-green p-2 rounded-full relative group">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     <span class="cart-count-badge absolute -top-2 -right-2 bg-pop-pink text-white text-xs px-2 py-0.5 border-2 border-black rounded-full">0</span>
                 </button>
-
                 <div class="flex items-center space-x-2 bg-white border-2 border-black px-3 py-1 shadow-[3px_3px_0px_#000]">
                     <span class="text-xs font-black text-pop-pink"><?= $current_username ?></span>
                     <a href="index.php?logout=1" class="text-[10px] text-red-500 underline font-black">EXIT</a>
                 </div>
             </div>
-
             <div class="flex md:hidden items-center space-x-3">
                 <button id="open-cart-btn-mob" class="pop-btn bg-pop-green p-2 rounded-lg relative">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -131,9 +128,10 @@ $conn->close();
     </div>
 
     <main class="container mx-auto px-4 md:px-6 py-8 md:py-12">
-        <div class="bg-pop-orange border-4 border-black p-6 md:p-12 mb-10 md:mb-20 relative overflow-hidden shadow-[8px_8px_0px_#000] md:shadow-[15px_15px_0px_#000]" data-aos="zoom-in">
-            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between text-center md:text-left">
-                <div>
+        
+        <div class="bg-pop-orange border-4 border-black p-6 md:p-12 mb-10 md:mb-16 relative overflow-hidden shadow-[8px_8px_0px_#000] md:shadow-[15px_15px_0px_#000]" data-aos="zoom-in">
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between">
+                <div class="text-center md:text-left">
                     <h1 class="text-4xl md:text-8xl font-black text-white uppercase mb-4 [text-shadow:3px_3px_0px_#000] md:[text-shadow:6px_6px_0px_#000] leading-tight">
                         Happy <br>Gaming!
                     </h1>
@@ -142,17 +140,50 @@ $conn->close();
                     </p>
                 </div>
 
-                <div class="mt-8 md:mt-0 relative float-anim hidden sm:block">
-                    <svg width="120" height="120" viewBox="0 0 200 200" class="md:w-48 md:h-48 drop-shadow-[6px_6px_0px_#000]">
-                        <circle cx="100" cy="100" r="80" fill="#FFEF00" stroke="black" stroke-width="6"/>
-                        <g class="animate-bounce" style="animation-duration: 2s;">
-                            <circle cx="70" cy="80" r="12" fill="black"/><circle cx="130" cy="80" r="12" fill="black"/>
-                        </g>
-                        <path d="M60 120 Q100 170 140 120" stroke="black" stroke-width="8" fill="none" stroke-linecap="round"/>
-                    </svg>
+                <div class="mt-8 md:mt-0 w-full md:w-1/2 max-w-lg" data-aos="fade-left">
+                    <div class="slider-container aspect-video bg-black">
+                        <div id="game-slider" class="w-full h-full relative">
+                            <img id="slider-img" src="<?= !empty($game_images) ? $game_images[0] : 'https://placehold.co/600x400?text=STUNSHOP+GAMES' ?>" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-center font-bold text-sm">
+                                🔥 คลังเกมอัปเดตใหม่ทุกสัปดาห์!
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+            <div class="pop-card bg-pop-blue p-8 flex flex-col justify-center" data-aos="fade-right">
+                <h2 class="text-3xl font-black mb-4 uppercase italic">ทำไมต้อง StunShop?</h2>
+                <p class="text-lg font-bold leading-relaxed">
+                    เราคือแพลตฟอร์มจำหน่ายเกมดิจิทัลที่เน้นความสนุกและเข้าถึงง่าย! ไม่ว่าคุณจะเป็นเกมเมอร์สาย Hardcore หรือสาย Casual 
+                    เรามีเกมคัดสรรคุณภาพในราคาที่เป็นมิตร พร้อมระบบที่ใช้งานง่ายและรวดเร็ว
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-4" data-aos="fade-left">
+                <div class="pop-card bg-pop-green p-4 text-center flex flex-col items-center justify-center">
+                    <span class="text-4xl mb-2">🚀</span>
+                    <h4 class="font-black">ส่งไว</h4>
+                    <p class="text-xs font-bold">ได้รับโค้ดทันทีหลังชำระเงิน</p>
+                </div>
+                <div class="pop-card bg-pop-yellow p-4 text-center flex flex-col items-center justify-center">
+                    <span class="text-4xl mb-2">💎</span>
+                    <h4 class="font-black">ของแท้</h4>
+                    <p class="text-xs font-bold">ลิขสิทธิ์แท้ 100% ทุกเกม</p>
+                </div>
+                <div class="pop-card bg-pop-pink p-4 text-center flex flex-col items-center justify-center">
+                    <span class="text-4xl mb-2">🛡️</span>
+                    <h4 class="font-black">ปลอดภัย</h4>
+                    <p class="text-xs font-bold">ระบบชำระเงินมาตรฐานสากล</p>
+                </div>
+                <div class="pop-card bg-white p-4 text-center flex flex-col items-center justify-center">
+                    <span class="text-4xl mb-2">📞</span>
+                    <h4 class="font-black">24/7</h4>
+                    <p class="text-xs font-bold">ทีมงานพร้อมซัพพอร์ตตลอด</p>
+                </div>
+            </div>
+        </section>
 
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12" data-aos="fade-right">
             <div class="flex items-center mb-4 md:mb-0">
@@ -172,7 +203,7 @@ $conn->close();
                 <div class="pop-card group" data-aos="fade-up">
                     <div class="border-b-4 border-black overflow-hidden bg-gray-200 aspect-video md:h-48 relative">
                         <img src="<?= $img ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="<?= $game['title'] ?>">
-                        <div class="absolute top-2 right-2 bg-pop-green border-2 border-black px-2 py-1 text-[8px] md:text-[10px] font-black rotate-12">HOT!</div>
+                        <div class="absolute top-2 right-2 bg-pop-green border-2 border-black px-2 py-1 text-[8px] md:text-[10px] font-black rotate-12">มาแรง!</div>
                     </div>
                     <div class="p-4">
                         <span class="text-[8px] md:text-[10px] font-black uppercase bg-pop-yellow px-2 border border-black inline-block mb-1 italic">
@@ -181,6 +212,9 @@ $conn->close();
                         <h3 class="text-lg md:text-xl font-black mb-3 line-clamp-1 uppercase group-hover:text-pop-blue"><?= htmlspecialchars($game['title']) ?></h3>
                         <div class="flex justify-between items-center">
                             <span class="text-xl md:text-2xl font-black tracking-tighter">฿<?= number_format($game['price'], 0) ?></span>
+                            <button onclick='addToCart(<?= json_encode($game) ?>)' class="pop-btn bg-pop-yellow p-2 hover:bg-pop-pink transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -210,22 +244,37 @@ $conn->close();
 
     <footer class="mt-10 py-10 text-center border-t-4 border-black bg-white">
         <p class="font-black text-sm md:text-lg">STUNSHOP.TOY &copy; 2026</p>
-        <p class="font-black text-sm md:text-lg">เว็บนี้สร้างไว้สำหรับส่งงานเท่านั้น<br>วิทยาลัยอาชีวศึกษาวิทยาลัยนครสวรรค์ &copy;</p>
+        <p class="font-black text-sm md:text-lg">เว็บนี้สร้างไว้สำหรับส่งงานเท่านั้น<br>วิทยาลัยอาชีวศึกษาวิริยาลัยนครสวรรค์ &copy;</p>
     </footer>
     
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({ duration: 800, once: true });
 
+        // --- Logic: Game Image Slider ---
+        const gameImages = <?= json_encode($game_images) ?>;
+        let currentImgIndex = 0;
+        const sliderImg = document.getElementById('slider-img');
+
+        if(gameImages.length > 1) {
+            setInterval(() => {
+                sliderImg.style.opacity = 0; // ค่อยๆ เฟดออก
+                setTimeout(() => {
+                    currentImgIndex = (currentImgIndex + 1) % gameImages.length;
+                    sliderImg.src = gameImages[currentImgIndex];
+                    sliderImg.style.opacity = 1; // ค่อยๆ เฟดเข้า
+                }, 800);
+            }, 4000); // เปลี่ยนรูปทุก 4 วินาที
+        }
+
         // Mobile Menu Toggle
         const menuToggle = document.getElementById('menu-toggle');
         const mobileMenu = document.getElementById('mobile-menu');
         const menuClose = document.getElementById('menu-close');
-
         menuToggle.onclick = () => mobileMenu.classList.add('menu-open');
         menuClose.onclick = () => mobileMenu.classList.remove('menu-open');
 
-        // Cart Logic
+        // Cart Logic (โค้ดเดิมที่ปรับปรุงเล็กน้อย)
         const cartModal = document.getElementById('cart-modal');
         const cartItemsList = document.getElementById('cart-items-list');
         const cartTotalAmount = document.getElementById('cart-total-amount');
@@ -239,6 +288,8 @@ $conn->close();
             cart.push(game);
             saveCart(cart);
             renderCart();
+            // ให้เด้งตะกร้าขึ้นมาโชว์เมื่อเพิ่มเกม
+            cartModal.classList.remove('hidden');
         };
 
         window.removeItem = (index) => {
@@ -257,24 +308,26 @@ $conn->close();
             if (cart.length === 0) {
                 cartItemsList.innerHTML = '<div class="text-center py-6 italic opacity-50">ว่างเปล่า...</div>';
                 checkoutBtn.disabled = true;
-                checkoutBtn.style.opacity = '0.5';
+                checkoutBtn.classList.add('opacity-50');
             } else {
                 checkoutBtn.disabled = false;
-                checkoutBtn.style.opacity = '1';
+                checkoutBtn.classList.remove('opacity-50');
                 cart.forEach((item, index) => {
                     const price = parseFloat(item.price || 0);
                     total += price;
                     cartItemsList.innerHTML += `
-                        <div class="flex justify-between items-center p-2 border-2 border-black bg-gray-50">
-                            <div><div class="font-black text-xs uppercase">${item.title}</div><div class="text-pop-pink font-bold text-sm">฿${price.toLocaleString()}</div></div>
-                            <button onclick="removeItem(${index})" class="bg-red-500 text-white border-2 border-black p-1">X</button>
+                        <div class="flex justify-between items-center p-2 border-2 border-black bg-gray-50 mb-2">
+                            <div>
+                                <div class="font-black text-xs uppercase">${item.title}</div>
+                                <div class="text-pop-pink font-bold text-sm">฿${price.toLocaleString()}</div>
+                            </div>
+                            <button onclick="removeItem(${index})" class="bg-red-500 text-white border-2 border-black px-2 py-1 font-black">X</button>
                         </div>`;
                 });
             }
-            cartTotalAmount.textContent = `฿${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            cartTotalAmount.textContent = `฿${total.toLocaleString(undefined, {minimumFractionDigits: 0})}`;
         };
 
-        // UI Events
         document.getElementById('open-cart-btn').onclick = () => { renderCart(); cartModal.classList.remove('hidden'); };
         document.getElementById('open-cart-btn-mob').onclick = () => { renderCart(); cartModal.classList.remove('hidden'); };
         document.getElementById('close-cart-modal-btn').onclick = () => cartModal.classList.add('hidden');

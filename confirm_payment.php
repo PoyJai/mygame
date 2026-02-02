@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (mysqli_query($conn, $sql)) {
                 echo "<script>
-                    alert('ส่งหลักฐานสำเร็จ! จะส่งใบเสร็จไปทางอีเมลครับ,คะ');
+                    alert('ส่งหลักฐานสำเร็จ! โค้ดเกมและใบเสร็จจะส่งไปทางอีเมลครับ');
                     window.location.href = 'index.php';
                 </script>";
             }
